@@ -1,6 +1,5 @@
 # Copyright (c) 2023 Qualcomm Technologies, Inc.
 # All rights reserved.
-import dgl
 import numpy as np
 import torch
 from e3nn.o3 import Irreps, spherical_harmonics
