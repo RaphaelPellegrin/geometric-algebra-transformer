@@ -7,7 +7,42 @@ from e3nn.o3 import Irreps, spherical_harmonics
 from torch import nn
 from torch_geometric.data import Data
 from torch_geometric.nn import knn_graph
-from torch_scatter import scatter
+
+# Custom implementation to replace torch_scatter
+def scatter(src, index, dim=-1, out=None, dim_size=None, reduce="sum"):
+    import torch
+    
+    if out is None:
+        size = list(src.size())
+        if dim_size is not None:
+            size[dim] = dim_size
+        elif index.numel() == 0:
+            size[dim] = 0
+        else:
+            size[dim] = int(index.max()) + 1
+        out = torch.zeros(size, dtype=src.dtype, device=src.device)
+        
+    if reduce == "sum" or reduce == "add":
+        return out.scatter_add_(dim, index, src)
+    elif reduce == "mean":
+        count = torch.zeros_like(out)
+        count.scatter_add_(dim, index, torch.ones_like(src))
+        out.scatter_add_(dim, index, src)
+        count[count == 0] = 1
+        return out / count
+    elif reduce == "min":
+        # This is a simplified version - might not handle all edge cases
+        out.fill_(float('inf'))
+        out.scatter_reduce_(dim, index, src, reduce="amin", include_self=False)
+        return out
+    elif reduce == "max":
+        # This is a simplified version - might not handle all edge cases
+        out.fill_(float('-inf'))
+        out.scatter_reduce_(dim, index, src, reduce="amax", include_self=False)
+        return out
+    else:
+        raise ValueError(f"Unsupported reduce: {reduce}")
+
 
 from gatr.baselines.gcan import GCAGNN
 from gatr.baselines.transformer import BaselineAxialTransformer, BaselineTransformer
