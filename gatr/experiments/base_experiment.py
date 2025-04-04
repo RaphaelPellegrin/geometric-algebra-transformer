@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+import wandb
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
@@ -92,6 +93,17 @@ class BaseExperiment:
 
         experiment_id = self._initialize_experiment()
 
+        # Initialize wandb
+        if hasattr(self.cfg, "wandb") and self.cfg.wandb.get("enabled", False):
+            wandb_config = self.cfg.wandb
+            wandb.init(
+                project=wandb_config.get("project", "gatr"),
+                name=wandb_config.get("name", self.cfg.run_name),
+                config=OmegaConf.to_container(self.cfg, resolve=True),
+                dir=wandb_config.get("dir", str(Path(self.cfg.exp_dir) / "wandb")),
+            )
+            logger.info(f"Initialized wandb with run name: {wandb.run.name}")
+
         with mlflow.start_run(experiment_id=experiment_id, run_name=self.cfg.run_name):
             self._save_config()
 
@@ -110,6 +122,10 @@ class BaseExperiment:
             if evaluate:
                 self.evaluate()
 
+        # Finish wandb run if it was initialized
+        if wandb.run is not None:
+            wandb.finish()
+
         logger.info("Anders nog iets?")
         return self.metrics
 
@@ -124,6 +140,9 @@ class BaseExperiment:
         # Report number of parameters
         num_parameters = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         log_mlflow("efficiency.num_parameters", float(num_parameters), step=0)
+        # Add wandb logging
+        if wandb.run is not None:
+            wandb.log({"efficiency.num_parameters": float(num_parameters)})
         logger.info(f"Model has {num_parameters / 1e6:.2f}M learnable parameters")
 
         # Create exponential moving average object
@@ -263,6 +282,9 @@ class BaseExperiment:
         logger.info(f"Validation loop at step {step}:")
         for key, value in metrics.items():
             log_mlflow(f"val.{key}", value, step=step)
+            # Add wandb logging
+            if wandb.run is not None:
+                wandb.log({f"val.{key}": value}, step=step)
             logger.info(f"    {key} = {value}")
 
         # Early stopping: compare val loss to last val loss
@@ -306,6 +328,9 @@ class BaseExperiment:
                 for key, val in metrics.items():
                     logger.info(f"    {key} = {val}")
                     log_mlflow(f"eval.{full_tag}.{key}", val)
+                    # Add wandb logging
+                    if wandb.run is not None:
+                        wandb.log({f"eval.{full_tag}.{key}": val})
 
                 # Store results in csv file
                 # Pandas does not like scalar values, have to be iterables
@@ -316,6 +341,11 @@ class BaseExperiment:
                 )
                 df.to_csv(Path(self.cfg.exp_dir) / "metrics" / f"eval_{full_tag}.csv", index=False)
                 dfs[full_tag] = df
+
+                # Upload CSV as artifact to wandb
+                if wandb.run is not None:
+                    csv_path = Path(self.cfg.exp_dir) / "metrics" / f"eval_{full_tag}.csv"
+                    wandb.save(str(csv_path))
         return dfs
 
     def save_model(self, filename=None):
