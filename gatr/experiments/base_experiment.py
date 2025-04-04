@@ -311,6 +311,9 @@ class BaseExperiment:
                 # Pandas does not like scalar values, have to be iterables
                 test_metrics_ = {key: [val] for key, val in metrics.items()}
                 df = pd.DataFrame.from_dict(test_metrics_)
+                logger.info(
+                    f"Saving eval metrics to {Path(self.cfg.exp_dir) / 'metrics' / f'eval_{full_tag}.csv'}"
+                )
                 df.to_csv(Path(self.cfg.exp_dir) / "metrics" / f"eval_{full_tag}.csv", index=False)
                 dfs[full_tag] = df
         return dfs
