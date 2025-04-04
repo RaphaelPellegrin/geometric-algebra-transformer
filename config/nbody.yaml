@@ -60,6 +60,13 @@ mlflow:
   db: '${base_dir}/tracking/mlflow.db'
   artifacts: '${base_dir}/tracking/artifacts'
 
+# Add wandb configuration here
+wandb:
+  enabled: true
+  project: "gatr"
+  name: ${run_name}
+  dir: ${exp_dir}/wandb
+
 defaults:
   - model: gatr_nbody
   - hydra
