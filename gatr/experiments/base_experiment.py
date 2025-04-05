@@ -143,7 +143,7 @@ class BaseExperiment:
         log_mlflow("efficiency.num_parameters", float(num_parameters), step=0)
         # Add wandb logging
         if wandb.run is not None:
-            wandb.log({"efficiency.num_parameters": float(num_parameters)})
+            wandb.log({"efficiency.num_parameters": float(num_parameters)}, step=0)
         logger.info(f"Model has {num_parameters / 1e6:.2f}M learnable parameters")
 
         # Create exponential moving average object
@@ -687,6 +687,11 @@ class BaseExperiment:
 
         self.optim.zero_grad()
         loss.backward()
+
+        # Log batch loss to wandb ( per-batch granularity)
+        # Note: this will log every single batch, which could be a lot of data
+        if wandb.run is not None:
+            wandb.log({"train.batch_loss": loss.item()})
 
         # Grad norm clipping
         try:
