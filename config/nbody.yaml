@@ -64,6 +64,7 @@ mlflow:
 wandb:
   enabled: true
   project: "gatr"
+  entity: "weber-geoml-harvard-university"
   name: ${run_name}
   dir: ${exp_dir}/wandb
 
