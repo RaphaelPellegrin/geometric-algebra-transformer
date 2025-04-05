@@ -88,13 +88,13 @@ for SIZE in "${SAMPLE_SIZES[@]}"; do
                 model=gatr_nbody \
                 data.subsample=${SUBSAMPLE} \
                 training.steps=${STEPS} \
-                +model.hidden_mv_channels=${MV_CHANNELS} \
-                +model.hidden_s_channels=${S_CHANNELS} \
-                +model.num_blocks=${NUM_BLOCKS} \
+                ++model.hidden_mv_channels=${MV_CHANNELS} \
+                ++model.hidden_s_channels=${S_CHANNELS} \
+                ++model.num_blocks=${NUM_BLOCKS} \
                 run_name=${RUN_NAME} \
-                wandb.enabled=true \
-                wandb.entity="weber-geoml-harvard-university" \
-                wandb.project="gatr-nbody-sweep"
+                ++wandb.enabled=true \
+                ++wandb.entity="weber-geoml-harvard-university" \
+                ++wandb.project="gatr-nbody-sweep"
             
             echo "Finished experiment configuration: $RUN_NAME"
             echo "End time: $(date)"
