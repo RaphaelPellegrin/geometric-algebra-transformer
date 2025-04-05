@@ -6,6 +6,9 @@
 #SBATCH --partition=gpu     
 #SBATCH --gpus=4                   # One GPU per task
 
+# Add this before your python command
+export CUDA_LAUNCH_BLOCKING=1
+
 # Add at the top of your script
 export WANDB_API_KEY="ea7c6eeb5a095b531ef60cc784bfeb87d47ea0b0"
 export WANDB_ENTITY="weber-geoml-harvard-university"
@@ -88,9 +91,9 @@ for SIZE in "${SAMPLE_SIZES[@]}"; do
                 model=gatr_nbody \
                 data.subsample=${SUBSAMPLE} \
                 training.steps=${STEPS} \
-                ++model.config.hidden_mv_channels=${MV_CHANNELS} \
-                ++model.config.hidden_s_channels=${S_CHANNELS} \
-                ++model.config.num_blocks=${NUM_BLOCKS} \
+                ++model.net.hidden_mv_channels=${MV_CHANNELS} \
+                ++model.net.hidden_s_channels=${S_CHANNELS} \
+                ++model.net.num_blocks=${NUM_BLOCKS} \
                 run_name=${RUN_NAME} \
                 ++wandb.enabled=true \
                 ++wandb.entity="weber-geoml-harvard-university" \
