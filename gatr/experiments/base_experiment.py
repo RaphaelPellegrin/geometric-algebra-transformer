@@ -98,6 +98,7 @@ class BaseExperiment:
             wandb_config = self.cfg.wandb
             wandb.init(
                 project=wandb_config.get("project", "gatr"),
+                entity=wandb_config.get("entity", "weber-geoml-harvard-university"),
                 name=wandb_config.get("name", self.cfg.run_name),
                 config=OmegaConf.to_container(self.cfg, resolve=True),
                 dir=wandb_config.get("dir", str(Path(self.cfg.exp_dir) / "wandb")),
@@ -223,6 +224,9 @@ class BaseExperiment:
             num_epochs, desc="Training epochs", disable=not self.cfg.training.progressbar
         ):
             log_mlflow("train.epoch", epoch, step=step)
+            # Add wandb logging for epoch
+            if wandb.run is not None:
+                wandb.log({"train.epoch": epoch}, step=step)
             epoch_start = time.perf_counter()
             self.model.train()
 
@@ -523,7 +527,7 @@ class BaseExperiment:
         matplotlib.rcParams.update(MATPLOTLIB_PARAMS)
 
     def _save_config(self):
-        """Stores the config in the experiment folder and tracks it with mlflow."""
+        """Stores the config in the experiment folder and tracks it with mlflow and wandb."""
 
         # Save config
         config_filename = Path(self.cfg.exp_dir) / "config.yml"
@@ -534,6 +538,20 @@ class BaseExperiment:
         # Store config as MLflow params
         for key, value in flatten_dict(self.cfg).items():
             log_mlflow(key, value, kind="param")
+
+        # Save config file as wandb artifact
+        if wandb.run is not None:
+            # Log the config file as an artifact
+            wandb.save(str(config_filename))
+
+            # You can also create a dedicated artifact
+            config_artifact = wandb.Artifact(
+                name=f"config_{wandb.run.id}", type="config", description="Experiment configuration"
+            )
+            config_artifact.add_file(str(config_filename))
+            wandb.log_artifact(config_artifact)
+
+            logger.info(f"Saved config as wandb artifact")
 
     def _create_model(self):
         """Creates the model from the config.
@@ -651,6 +669,9 @@ class BaseExperiment:
             self.scheduler.step()
             logger.debug(f"Decaying LR to {self.scheduler.get_last_lr()[0]}")
             log_mlflow("train.lr", self.scheduler.get_last_lr()[0], step=step)
+            # Add wandb logging
+            if wandb.run is not None:
+                wandb.log({"train.lr": self.scheduler.get_last_lr()[0]}, step=step)
 
         # Custom hooks
         for hook_step, hook_every_step, hook in self._hooks:
@@ -732,7 +753,7 @@ class BaseExperiment:
         return aggregate_metrics
 
     def _log(self, loss, metrics, grad_norm, step):
-        """Log to MLflow.
+        """Log to MLflow and WandB.
 
         Parameters
         ----------
@@ -754,8 +775,17 @@ class BaseExperiment:
         metrics["time_total_s"] = time.time() - self._training_start_time
         metrics["time_per_step_s"] = (time.time() - self._training_start_time) / (step + 1)
 
+        # Create a dict for wandb metrics
+        wandb_metrics = {}
+
         for key, values in metrics.items():
             log_mlflow(f"train.{key}", values, step=step)
+            # Add to wandb metrics dict
+            wandb_metrics[f"train.{key}"] = values
+
+        # Log all metrics to wandb at once (more efficient)
+        if wandb.run is not None and wandb_metrics:
+            wandb.log(wandb_metrics, step=step)
 
     def _load_dataset(self, tag):
         """Loads dataset. To be implemented by subclasses.
