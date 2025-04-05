@@ -88,9 +88,9 @@ for SIZE in "${SAMPLE_SIZES[@]}"; do
                 model=gatr_nbody \
                 data.subsample=${SUBSAMPLE} \
                 training.steps=${STEPS} \
-                ++model.hidden_mv_channels=${MV_CHANNELS} \
-                ++model.hidden_s_channels=${S_CHANNELS} \
-                ++model.num_blocks=${NUM_BLOCKS} \
+                ++model.config.hidden_mv_channels=${MV_CHANNELS} \
+                ++model.config.hidden_s_channels=${S_CHANNELS} \
+                ++model.config.num_blocks=${NUM_BLOCKS} \
                 run_name=${RUN_NAME} \
                 ++wandb.enabled=true \
                 ++wandb.entity="weber-geoml-harvard-university" \
