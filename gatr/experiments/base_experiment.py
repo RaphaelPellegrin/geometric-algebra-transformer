@@ -105,6 +105,13 @@ class BaseExperiment:
             )
             logger.info(f"Initialized wandb with run name: {wandb.run.name}")
 
+        # Add this right after wandb initialization in your code
+        if wandb.run is not None:
+            print(f"WandB initialized successfully: {wandb.run.name} ({wandb.run.id})")
+            print(f"View run at: {wandb.run.get_url()}")
+        else:
+            print("WARNING: wandb.run is None after initialization!")
+
         with mlflow.start_run(experiment_id=experiment_id, run_name=self.cfg.run_name):
             self._save_config()
 
