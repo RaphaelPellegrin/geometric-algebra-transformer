@@ -60,6 +60,14 @@ mlflow:
   db: '${base_dir}/tracking/mlflow.db'
   artifacts: '${base_dir}/tracking/artifacts'
 
+# Wandb configuration 
+wandb:
+  enabled: true
+  project: "gatr"
+  entity: "weber-geoml-harvard-university"
+  name: ${run_name}
+  dir: ${exp_dir}/wandb
+
 defaults:
   - model: gatr_arteries
   - hydra

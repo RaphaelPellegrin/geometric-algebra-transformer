@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+import wandb
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
@@ -92,6 +93,25 @@ class BaseExperiment:
 
         experiment_id = self._initialize_experiment()
 
+        # Initialize wandb
+        if hasattr(self.cfg, "wandb") and self.cfg.wandb.get("enabled", False):
+            wandb_config = self.cfg.wandb
+            wandb.init(
+                project=wandb_config.get("project", "gatr"),
+                entity=wandb_config.get("entity", "weber-geoml-harvard-university"),
+                name=wandb_config.get("name", self.cfg.run_name),
+                config=OmegaConf.to_container(self.cfg, resolve=True),
+                dir=wandb_config.get("dir", str(Path(self.cfg.exp_dir) / "wandb")),
+            )
+            logger.info(f"Initialized wandb with run name: {wandb.run.name}")
+
+        # Add this right after wandb initialization in your code
+        if wandb.run is not None:
+            print(f"WandB initialized successfully: {wandb.run.name} ({wandb.run.id})")
+            print(f"View run at: {wandb.run.get_url()}")
+        else:
+            print("WARNING: wandb.run is None after initialization!")
+
         with mlflow.start_run(experiment_id=experiment_id, run_name=self.cfg.run_name):
             self._save_config()
 
@@ -110,6 +130,10 @@ class BaseExperiment:
             if evaluate:
                 self.evaluate()
 
+        # Finish wandb run if it was initialized
+        if wandb.run is not None:
+            wandb.finish()
+
         logger.info("Anders nog iets?")
         return self.metrics
 
@@ -124,6 +148,9 @@ class BaseExperiment:
         # Report number of parameters
         num_parameters = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         log_mlflow("efficiency.num_parameters", float(num_parameters), step=0)
+        # Add wandb logging
+        if wandb.run is not None:
+            wandb.log({"efficiency.num_parameters": float(num_parameters)}, step=0)
         logger.info(f"Model has {num_parameters / 1e6:.2f}M learnable parameters")
 
         # Create exponential moving average object
@@ -204,6 +231,9 @@ class BaseExperiment:
             num_epochs, desc="Training epochs", disable=not self.cfg.training.progressbar
         ):
             log_mlflow("train.epoch", epoch, step=step)
+            # Add wandb logging for epoch
+            if wandb.run is not None:
+                wandb.log({"train.epoch": epoch}, step=step)
             epoch_start = time.perf_counter()
             self.model.train()
 
@@ -263,6 +293,9 @@ class BaseExperiment:
         logger.info(f"Validation loop at step {step}:")
         for key, value in metrics.items():
             log_mlflow(f"val.{key}", value, step=step)
+            # Add wandb logging
+            if wandb.run is not None:
+                wandb.log({f"val.{key}": value}, step=step)
             logger.info(f"    {key} = {value}")
 
         # Early stopping: compare val loss to last val loss
@@ -306,6 +339,9 @@ class BaseExperiment:
                 for key, val in metrics.items():
                     logger.info(f"    {key} = {val}")
                     log_mlflow(f"eval.{full_tag}.{key}", val)
+                    # Add wandb logging
+                    if wandb.run is not None:
+                        wandb.log({f"eval.{full_tag}.{key}": val})
 
                 # Store results in csv file
                 # Pandas does not like scalar values, have to be iterables
@@ -316,6 +352,11 @@ class BaseExperiment:
                 )
                 df.to_csv(Path(self.cfg.exp_dir) / "metrics" / f"eval_{full_tag}.csv", index=False)
                 dfs[full_tag] = df
+
+                # Upload CSV as artifact to wandb
+                if wandb.run is not None:
+                    csv_path = Path(self.cfg.exp_dir) / "metrics" / f"eval_{full_tag}.csv"
+                    wandb.save(str(csv_path))
         return dfs
 
     def save_model(self, filename=None):
@@ -493,7 +534,7 @@ class BaseExperiment:
         matplotlib.rcParams.update(MATPLOTLIB_PARAMS)
 
     def _save_config(self):
-        """Stores the config in the experiment folder and tracks it with mlflow."""
+        """Stores the config in the experiment folder and tracks it with mlflow and wandb."""
 
         # Save config
         config_filename = Path(self.cfg.exp_dir) / "config.yml"
@@ -504,6 +545,20 @@ class BaseExperiment:
         # Store config as MLflow params
         for key, value in flatten_dict(self.cfg).items():
             log_mlflow(key, value, kind="param")
+
+        # Save config file as wandb artifact
+        if wandb.run is not None:
+            # Log the config file as an artifact
+            wandb.save(str(config_filename))
+
+            # You can also create a dedicated artifact
+            config_artifact = wandb.Artifact(
+                name=f"config_{wandb.run.id}", type="config", description="Experiment configuration"
+            )
+            config_artifact.add_file(str(config_filename))
+            wandb.log_artifact(config_artifact)
+
+            logger.info(f"Saved config as wandb artifact")
 
     def _create_model(self):
         """Creates the model from the config.
@@ -621,6 +676,9 @@ class BaseExperiment:
             self.scheduler.step()
             logger.debug(f"Decaying LR to {self.scheduler.get_last_lr()[0]}")
             log_mlflow("train.lr", self.scheduler.get_last_lr()[0], step=step)
+            # Add wandb logging
+            if wandb.run is not None:
+                wandb.log({"train.lr": self.scheduler.get_last_lr()[0]}, step=step)
 
         # Custom hooks
         for hook_step, hook_every_step, hook in self._hooks:
@@ -636,6 +694,11 @@ class BaseExperiment:
 
         self.optim.zero_grad()
         loss.backward()
+
+        # Log batch loss to wandb ( per-batch granularity)
+        # Note: this will log every single batch, which could be a lot of data
+        if wandb.run is not None:
+            wandb.log({"train.batch_loss": loss.item()})
 
         # Grad norm clipping
         try:
@@ -702,7 +765,7 @@ class BaseExperiment:
         return aggregate_metrics
 
     def _log(self, loss, metrics, grad_norm, step):
-        """Log to MLflow.
+        """Log to MLflow and WandB.
 
         Parameters
         ----------
@@ -724,8 +787,17 @@ class BaseExperiment:
         metrics["time_total_s"] = time.time() - self._training_start_time
         metrics["time_per_step_s"] = (time.time() - self._training_start_time) / (step + 1)
 
+        # Create a dict for wandb metrics
+        wandb_metrics = {}
+
         for key, values in metrics.items():
             log_mlflow(f"train.{key}", values, step=step)
+            # Add to wandb metrics dict
+            wandb_metrics[f"train.{key}"] = values
+
+        # Log all metrics to wandb at once (more efficient)
+        if wandb.run is not None and wandb_metrics:
+            wandb.log(wandb_metrics, step=step)
 
     def _load_dataset(self, tag):
         """Loads dataset. To be implemented by subclasses.
