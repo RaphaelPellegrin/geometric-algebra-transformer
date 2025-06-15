@@ -409,3 +409,65 @@ If you find our code useful, please cite:
   url = {https://arxiv.org/abs/2311.04744},
 }
 ```
+
+## Raphael Notes
+
+Our new lab scratch space is:
+```
+/n/netscratch/mweber_lab
+```
+
+The Scratch Space (/n/netscratch/mweber_lab):
+* Temporary storage space
+* Faster I/O performance
+* Typically used for active computations and temporary data
+* Usually has larger storage capacity
+* Data may be automatically purged after a certain period
+* Better suited for running experiments and processing large datasets
+* Ideal for intermediate results and temporary files
+
+Lab directory on FASRC: 
+```
+/n/holylabs/LABS/mweber_lab
+```
+
+(eg:
+```
+/n/holylabs/LABS/mweber_lab/Everyone/rpellegrin/
+```
+)
+
+Lab Space (/n/holylabs/LABS/mweber_lab):
+* Permanent storage space
+* More reliable for long-term storage
+* Used for storing important results, code, and permanent data
+* Typically has backup systems
+* Data is not automatically purged
+* Better suited for storing final results, papers, and important code
+* Ideal for collaborative work and sharing results with lab members
+Best Practices:
+* Use scratch space for running experiments and temporary data
+* Use lab space for storing important results, code, and permanent data
+* Regularly move important results from scratch to lab space
+* Don't rely on scratch space for long-term storage
+
+### Run GATr on cluster
+
+First make a folder:
+```
+mkdir -p /n/netscratch/mweber_lab/Everyone/rpellegrinext/gatr_experiments
+```
+
+Then set the BASEDIR environment to this new dir:
+
+```
+export BASEDIR=/n/netscratch/mweber_lab/Everyone/rpellegrinext/gatr_experiments
+```
+
+Can only run on the cluster.
+I am running from the wandb branch.
+I am uploading the pip freeze reuslts from my environment there.
+Then I added a bash script to run:
+```
+run_gatr_different_samples.sh
+```
