@@ -545,8 +545,10 @@ So the easiest way is to run this which handles the salloc:
 
 Then I added a bash script to run variations:
 ```
-run_gatr_different_samples.sh
+sbatch run_gatr_different_samples.sh
 ```
+
+(important to have sbatch otherwise will run from loggin node.)
 
 
 I am uploading the pip freeze reuslts from my environment there.

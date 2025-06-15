@@ -2,9 +2,9 @@
 #SBATCH --job-name=gatr_3d_sweep       
 #SBATCH --time=48:00:00         
 #SBATCH --mem=32GB               
-#SBATCH --output=logs/gatr_sweep_%j.log  # %j is job ID
+#SBATCH --output=/n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/logs/gatr_sweep_%j.log  # %j is job ID
 #SBATCH --partition=gpu     
-#SBATCH --gpus=4                   # One GPU per task
+#SBATCH --gpus=4          # One GPU per task
 
 # Add this before your python command
 export CUDA_LAUNCH_BLOCKING=1
@@ -61,7 +61,7 @@ echo "Base directory absolute path: $(realpath $BASEDIR)"
 echo "MLflow database location: $(realpath $BASEDIR)/tracking/mlflow.db"
 
 # Generate the dataset (only need to do this once)
-python scripts/generate_nbody_dataset.py base_dir="${BASEDIR}" seed=42
+# python scripts/generate_nbody_dataset.py base_dir="${BASEDIR}" seed=42
 
 # Loop through all combinations of parameters
 for SIZE in "${SAMPLE_SIZES[@]}"; do
