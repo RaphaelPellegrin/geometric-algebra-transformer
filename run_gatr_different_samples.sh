@@ -14,10 +14,14 @@ export WANDB_API_KEY="ea7c6eeb5a095b531ef60cc784bfeb87d47ea0b0"
 export WANDB_ENTITY="weber-geoml-harvard-university"
 export WANDB_PROJECT="gatr-nbody-sweep"
 
-# Can change this to your own directory
+# Set base directory for experiments
 export BASEDIR=/n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments
 
+# Create log directory in the same parent directory
+mkdir -p /n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/logs
 
+# Create the data directory if it doesn't exist
+mkdir -p ${BASEDIR}
 
 # Define the sample sizes to run (as percentages), we divide by 100 to get a decimal
 SAMPLE_SIZES=(0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 10 20 30 40 50 60 70 80 90 100)
@@ -42,17 +46,9 @@ MODEL_SIZES=(
 )
 
 # Load modules and activate environment
-module load anaconda/2023.07
+module load anaconda3
 source activate gatr
 
-# Create log directory if it doesn't exist
-mkdir -p logs
-
-# Set the base directory for data and results
-export BASEDIR="$(pwd)/tmp/gatr-experiments"
-
-# Create the data directory if it doesn't exist
-mkdir -p ${BASEDIR}
 
 # Print some information about the job
 echo "Running GATr 3D parameter sweep experiment"

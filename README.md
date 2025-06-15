@@ -464,7 +464,7 @@ Clone. in
 Eg
 
 ```
-(gatr) [rpellegrinext@holylogin05 rpellegrin]$ git clone https://github.com/RaphaelPellegrin/geometric-algebra-transformer.git
+(gatr) [rpellegrinext@holylogin05 rpellegrin]$ git clone https://github.com/Weber-GeoML/geometric-algebra-transformer.git
 Cloning into 'geometric-algebra-transformer'...
 remote: Enumerating objects: 528, done.
 remote: Counting objects: 100% (148/148), done.
@@ -509,11 +509,39 @@ Creating gravity dataset in /n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/
 Done, have a nice day!
 ```
 
-Then run:
+If the data already exists, you'll get this:
+
+```
+(gatr) [rpellegrinext@boslogin08 geometric-algebra-transformer]$ python scripts/generate_nbody_dataset.py base_dir="${BASEDIR}" seed=42
+WARNING[XFORMERS]: xFormers can't load C++/CUDA extensions. xFormers was built for:
+    PyTorch 2.0.1+cu118 with CUDA 1108 (you have 2.2.0+cu121)
+    Python  3.11.3 (you have 3.11.11)
+  Please reinstall xformers (see https://github.com/facebookresearch/xformers#installing-xformers)
+  Memory-efficient attention, SwiGLU, sparse and more won't be available.
+  Set XFORMERS_MORE_DETAILS=1 for more details
+Creating gravity dataset in /n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments/data/nbody
+Error executing job with overrides: ['base_dir=/n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments', 'seed=42']
+Traceback (most recent call last):
+  File "/n/holylabs/mweber_lab/Everyone/rpellegrin/geometric-algebra-transformer/scripts/generate_nbody_dataset.py", line 55, in main
+    generate_datasets(data_dir)
+  File "/n/holylabs/mweber_lab/Everyone/rpellegrin/geometric-algebra-transformer/scripts/generate_nbody_dataset.py", line 37, in generate_datasets
+    generate_dataset(path / "train.npz", simulator, 100000, num_planets=3, domain_shift=False)
+  File "/n/holylabs/mweber_lab/Everyone/rpellegrin/geometric-algebra-transformer/scripts/generate_nbody_dataset.py", line 15, in generate_dataset
+    assert not Path(filename).exists()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+```
+
+
+Then run this from a non-login node:
 
 ```
 python scripts/nbody_experiment.py base_dir="${BASEDIR}" seed=42 model=gatr_nbody data.subsample=0.01 training.steps=5000 run_name=gatr
 ```
+
+So the easiest way is to run this which handles the salloc:
 
 Then I added a bash script to run variations:
 ```
