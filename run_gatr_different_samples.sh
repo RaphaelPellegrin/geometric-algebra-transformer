@@ -14,6 +14,10 @@ export WANDB_API_KEY="ea7c6eeb5a095b531ef60cc784bfeb87d47ea0b0"
 export WANDB_ENTITY="weber-geoml-harvard-university"
 export WANDB_PROJECT="gatr-nbody-sweep"
 
+# Can change this to your own directory
+export BASEDIR=/n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments
+
+
 
 # Define the sample sizes to run (as percentages), we divide by 100 to get a decimal
 SAMPLE_SIZES=(0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 10 20 30 40 50 60 70 80 90 100)

@@ -451,23 +451,76 @@ Best Practices:
 * Regularly move important results from scratch to lab space
 * Don't rely on scratch space for long-term storage
 
-### Run GATr on cluster
+### Run GATr on cluster for HARVARD people
+
+Can only run on the cluster. On my mac locally it does not work.
+
+
+Clone. in 
+```
+/n/holylabs/LABS/mweber_lab/Everyone/<you>
+```
+
+Eg
+
+```
+(gatr) [rpellegrinext@holylogin05 rpellegrin]$ git clone https://github.com/RaphaelPellegrin/geometric-algebra-transformer.git
+Cloning into 'geometric-algebra-transformer'...
+remote: Enumerating objects: 528, done.
+remote: Counting objects: 100% (148/148), done.
+remote: Compressing objects: 100% (67/67), done.
+remote: Total 528 (delta 103), reused 100 (delta 81), pack-reused 380 (from 1)
+Receiving objects: 100% (528/528), 442.96 KiB | 7.14 MiB/s, done.
+Resolving deltas: 100% (276/276), done.
+(gatr) [rpellegrinext@holylogin05 rpellegrin]$ ls
+geometric-algebra-transformer  PhenomNN
+(gatr) [rpellegrinext@holylogin05 rpellegrin]$ pwd
+/n/holylabs/LABS/mweber_lab/Everyone/rpellegrin
+```
 
 First make a folder:
 ```
-mkdir -p /n/netscratch/mweber_lab/Everyone/rpellegrinext/gatr_experiments
+mkdir -p /n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments
 ```
 
 Then set the BASEDIR environment to this new dir:
 
 ```
-export BASEDIR=/n/netscratch/mweber_lab/Everyone/rpellegrinext/gatr_experiments
+export BASEDIR=/n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments
 ```
 
-Can only run on the cluster.
-I am running from the wandb branch.
-I am uploading the pip freeze reuslts from my environment there.
-Then I added a bash script to run:
+Then make the data:
+
+```
+python scripts/generate_nbody_dataset.py base_dir="${BASEDIR}" seed=42
+```
+
+You should see:
+
+```
+(gatr) [rpellegrinext@holylogin05 geometric-algebra-transformer]$ python scripts/generate_nbody_dataset.py base_dir="${BASEDIR}" seed=42
+WARNING[XFORMERS]: xFormers can't load C++/CUDA extensions. xFormers was built for:
+    PyTorch 2.0.1+cu118 with CUDA 1108 (you have 2.2.0+cu121)
+    Python  3.11.3 (you have 3.11.11)
+  Please reinstall xformers (see https://github.com/facebookresearch/xformers#installing-xformers)
+  Memory-efficient attention, SwiGLU, sparse and more won't be available.
+  Set XFORMERS_MORE_DETAILS=1 for more details
+Creating gravity dataset in /n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments/data/nbody
+Done, have a nice day!
+```
+
+Then run:
+
+```
+python scripts/nbody_experiment.py base_dir="${BASEDIR}" seed=42 model=gatr_nbody data.subsample=0.01 training.steps=5000 run_name=gatr
+```
+
+Then I added a bash script to run variations:
 ```
 run_gatr_different_samples.sh
 ```
+
+
+I am uploading the pip freeze reuslts from my environment there.
+raphael_env_example/requirements.txt
+
