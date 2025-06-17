@@ -478,6 +478,13 @@ geometric-algebra-transformer  PhenomNN
 /n/holylabs/LABS/mweber_lab/Everyone/rpellegrin
 ```
 
+Make a gatr conda venv and install the packages. The easiest is probably:
+
+```
+conda create -n gatr python=3.11 -y && conda activate gatr
+pip install -r raphael_env_example/requirement_gatr.txt
+```
+
 First make a folder:
 ```
 mkdir -p /n/netscratch/mweber_lab/Everyone/rpellegrinext/tmp/gatr_experiments
