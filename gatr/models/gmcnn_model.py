@@ -138,8 +138,15 @@ class GMCNNModel(nn.Module):
             # x = x_norm.view(batch_size * num_items, -1, 1).unsqueeze(-1)
             print(f"[GMCNNModel] After conv layer {i+1} (no normalization): {x.shape}")
 
-        # Remove the last dimension and project to output
-        x = x.squeeze(-1).squeeze(-1)  # (batch_size * num_items, mv_channels)
+        # Handle the output tensor properly - it may have extra dimensions from GM-CNN
+        print(f"[GMCNNModel] Raw output shape: {x.shape}")
+
+        # Flatten the last two dimensions and take only the mv_channels
+        x = x.view(batch_size * num_items, -1)  # Flatten to (batch_size * num_items, all_features)
+        print(f"[GMCNNModel] Flattened shape: {x.shape}")
+
+        # Take only the first mv_channels for output projection
+        x = x[:, : self.mv_channels]  # (batch_size * num_items, mv_channels)
         print(f"[GMCNNModel] Before output projection: {x.shape}")
 
         x = x.view(batch_size, num_items, -1)  # (batch_size, num_items, mv_channels)
