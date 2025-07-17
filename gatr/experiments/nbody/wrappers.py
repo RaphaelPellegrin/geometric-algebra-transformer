@@ -233,6 +233,9 @@ class NBodySEGNNWrapper(nn.Module):
     def __init__(self, net, neighbors, lmax_attr, canonicalize_mode="com"):
         super().__init__()
 
+        if Irreps is None:
+            raise ImportError("e3nn is required for SEGNN wrapper but not available")
+
         self.net = net
 
         self.canonicalize_mode = canonicalize_mode
@@ -416,6 +419,8 @@ class NBodySE3TransformerWrapper(nn.Module):
 
     def _build_graphs(self, locations, velocities, masses):
         """Builds graph for a full batch."""
+        if dgl is None:
+            raise ImportError("DGL is required for SEGNN wrapper but not available")
         graphs = [
             self._build_graph(loc, vel, m) for loc, vel, m in zip(locations, velocities, masses)
         ]
@@ -425,6 +430,8 @@ class NBodySE3TransformerWrapper(nn.Module):
 
     def _build_graph(self, locations, velocities, masses):
         """Builds graph for a single sample."""
+        if dgl is None:
+            raise ImportError("DGL is required for SEGNN wrapper but not available")
         n_points = len(locations)
         indices_src, indices_dst = self._fully_connected_idx(n_points)
         graph = dgl.DGLGraph((indices_src, indices_dst)).to(locations.device)
