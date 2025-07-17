@@ -17,6 +17,13 @@ echo "Loading CUDA and cuDNN modules..."
 module load cuda/12.9.1-fasrc01
 module load cudnn/8.9.2.26_cuda12-fasrc01
 
+# Check where cuDNN is installed
+echo "CUDNN_PATH: $CUDNN_PATH"
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+# Find the cuDNN library
+find /n/sw -name "libcudnn.so*" 2>/dev/null | head -5
+
 echo "Checking loaded modules..."
 module list
 
@@ -35,6 +42,9 @@ fi
 echo "Checking dataset files..."
 ls -la "${BASEDIR}/data/nbody/"
 
+# Set library path to include cuDNN
+export LD_LIBRARY_PATH=$CUDNN_PATH/lib:$LD_LIBRARY_PATH
+
 # Run GM-CNN experiment
 echo "Running GM-CNN experiment..."
 python scripts/nbody_experiment.py \
@@ -42,9 +52,11 @@ python scripts/nbody_experiment.py \
     seed=42 \
     model=gm_cnn_nbody \
     data.subsample=0.01 \
-    training.steps=100 \
+    training.steps=10 \
+    training.batch_size=10 \
+    device=cpu \
     run_name=gmcnn_test \
-    ++wandb.enabled=true \
+    ++wandb.enabled=false \
     ++wandb.entity="weber-geoml-harvard-university" \
     ++wandb.project="gmcnn-nbody-test"
 
