@@ -50,13 +50,18 @@ class BaseExperiment:
     """
 
     def __init__(self, cfg):
+        print("DEBUG: BaseExperiment.__init__ starting...")
         # Store config
         self.cfg = cfg
+        print("DEBUG: Config stored")
 
         # Device, dtype, backend
+        print("DEBUG: About to initialize backend...")
         self.device, self.dtype = self._init_backend()
+        print(f"DEBUG: Backend initialized - device: {self.device}, dtype: {self.dtype}")
 
         # Initialize state
+        print("DEBUG: Initializing state variables...")
         self.model: Optional[nn.Module] = None
         self.ema = None
         self.optim = None
@@ -65,14 +70,24 @@ class BaseExperiment:
         self.metrics = {}
         self._best_state = None
         self._training_start_time: Optional[float] = None
+        print("DEBUG: State variables initialized")
 
         # Initialize folder and logger
+        print("DEBUG: About to initialize experiment folder...")
         self._initialize_experiment_folder()
+        print("DEBUG: Experiment folder initialized")
+
+        print("DEBUG: About to initialize logger...")
         self._initialize_logger()
+        print("DEBUG: Logger initialized")
+
+        print("DEBUG: About to silence the lambs...")
         self._silence_the_lambs()
+        print("DEBUG: Lambs silenced")
 
         # Training hooks: list of (state, hook_function)
         self._hooks = []
+        print("DEBUG: BaseExperiment.__init__ completed successfully")
 
     def __call__(self, train=True, evaluate=True):
         """Performs experiment as outlined below.

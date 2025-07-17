@@ -561,6 +561,11 @@ sbatch run_gatr_different_samples.sh
 I am uploading the pip freeze reuslts from my environment there.
 raphael_env_example/requirements.txt
 
+STUFF I RAN ON CLUSTER
+
+pip uninstall xformers -y
+pip install xformers==0.0.20
+
 
 ## Notes on incorporating GM-CNN instead of GATR layer
 
