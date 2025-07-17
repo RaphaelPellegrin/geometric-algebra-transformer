@@ -44,6 +44,11 @@ class GMCNNModel(nn.Module):
     ) -> None:
         super().__init__()
 
+        # Store parameters
+        self.mv_channels = mv_channels
+        self.input_channels = input_channels
+        self.output_channels = output_channels
+
         print(f"[GMCNNModel] Initializing GM-CNN model")
         print(f"[GMCNNModel] Architecture: {input_channels} -> {mv_channels} -> {output_channels}")
         print(
