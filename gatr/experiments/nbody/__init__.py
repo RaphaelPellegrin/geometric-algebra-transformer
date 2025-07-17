@@ -6,6 +6,7 @@ from .simulator import NBodySimulator
 from .wrappers import (
     NBodyBaselineWrapper,
     NBodyGATrWrapper,
+    NBodyGMCNNWrapper,
     NBodySE3TransformerWrapper,
     NBodySEGNNWrapper,
 )
