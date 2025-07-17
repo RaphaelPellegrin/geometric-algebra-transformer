@@ -561,3 +561,7 @@ sbatch run_gatr_different_samples.sh
 I am uploading the pip freeze reuslts from my environment there.
 raphael_env_example/requirements.txt
 
+
+## Notes on incorporating GM-CNN instead of GATR layer
+
+GATrBlock is a transformer-style block that processes both multivectors and scalars

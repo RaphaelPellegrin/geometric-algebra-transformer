@@ -1,16 +1,11 @@
 # Copyright (c) 2023 Qualcomm Technologies, Inc.
 # All rights reserved.
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Optional, Dict, Any
 
 import torch
-from torch import nn
-from omegaconf import DictConfig
-from torch.utils.data import Dataset
 
 from gatr.experiments.base_experiment import BaseExperiment
-from gatr.experiments.nbody.dataset import NBodyDataset, NBodyDatasetConfig
+from gatr.experiments.nbody.dataset import NBodyDataset
 
 
 class NBodyExperiment(BaseExperiment):
@@ -18,23 +13,16 @@ class NBodyExperiment(BaseExperiment):
 
     Parameters
     ----------
-    cfg : DictConfig
+    cfg : OmegaConf
         Experiment configuration. See the config folder in the repository for examples.
     """
 
-    def __init__(self, cfg: DictConfig):
+    def __init__(self, cfg):
         super().__init__(cfg)
         self._mse_criterion = torch.nn.MSELoss()
         self._mae_criterion = torch.nn.L1Loss(reduction="mean")
 
-        # Create dataset config
-        self.dataset_config = NBodyDatasetConfig(
-            use_gmcnn=cfg.get("data", {}).get("use_gmcnn", False),
-            input_channels=cfg.get("model", {}).get("input_channels", 7),
-            output_channels=cfg.get("model", {}).get("output_channels", 3),
-        )
-
-    def _load_dataset(self, tag: str) -> Dataset:
+    def _load_dataset(self, tag):
         """Loads dataset.
 
         Parameters
@@ -47,6 +35,7 @@ class NBodyExperiment(BaseExperiment):
         dataset : torch.utils.data.Dataset
             Dataset.
         """
+
         if tag == "train":
             subsample_fraction = self.cfg.data.subsample
         else:
@@ -54,12 +43,8 @@ class NBodyExperiment(BaseExperiment):
 
         filename = Path(self.cfg.data.data_dir) / f"{tag}.npz"
         keep_trajectories = tag == "val"
-
         return NBodyDataset(
-            filename,
-            subsample=subsample_fraction,
-            keep_trajectories=keep_trajectories,
-            config=self.dataset_config,
+            filename, subsample=subsample_fraction, keep_trajectories=keep_trajectories
         )
 
     def _forward(self, *data):
@@ -81,20 +66,18 @@ class NBodyExperiment(BaseExperiment):
         # Forward pass
         assert self.model is not None
         x, y = data
+        y_pred, reg = self.model(x)
 
-        # Forward pass through the model (wrapper handles the details)
-        y_pred, other = self.model(x)
-
-        # Compute loss with regularization if available
+        # Compute loss
         mse = self._mse_criterion(y_pred, y)
-        if other is not None and self.cfg.training.output_regularization > 0:
-            loss = mse + self.cfg.training.output_regularization * other.mean()
-        else:
-            loss = mse
+        output_reg = torch.mean(reg)
+        loss = mse + self.cfg.training.output_regularization * output_reg
 
         # Additional metrics
         mae = self._mae_criterion(y_pred, y)
-        metrics = dict(mse=mse.item(), rmse=mse.item() ** 0.5, mae=mae.item())
+        metrics = dict(
+            mse=mse.item(), rmse=loss.item() ** 0.5, output_reg=output_reg.item(), mae=mae.item()
+        )
 
         return loss, metrics
 
@@ -110,7 +93,7 @@ class NBodyExperiment(BaseExperiment):
 
         # Only evaluate on object_generalization dataset when method supports variable token number
         assert self.model is not None
-        if hasattr(self.model, "supports_variable_items") and self.model.supports_variable_items:
+        if self.model.supports_variable_items:
             return {"eval", "e3_generalization", "object_generalization"}
 
         return {"eval", "e3_generalization"}

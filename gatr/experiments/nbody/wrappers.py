@@ -8,10 +8,11 @@ from torch import nn
 from torch_geometric.data import Data
 from torch_geometric.nn import knn_graph
 
+
 # Custom implementation to replace torch_scatter
 def scatter(src, index, dim=-1, out=None, dim_size=None, reduce="sum"):
     import torch
-    
+
     if out is None:
         size = list(src.size())
         if dim_size is not None:
@@ -21,7 +22,7 @@ def scatter(src, index, dim=-1, out=None, dim_size=None, reduce="sum"):
         else:
             size[dim] = int(index.max()) + 1
         out = torch.zeros(size, dtype=src.dtype, device=src.device)
-        
+
     if reduce == "sum" or reduce == "add":
         return out.scatter_add_(dim, index, src)
     elif reduce == "mean":
@@ -32,12 +33,12 @@ def scatter(src, index, dim=-1, out=None, dim_size=None, reduce="sum"):
         return out / count
     elif reduce == "min":
         # This is a simplified version - might not handle all edge cases
-        out.fill_(float('inf'))
+        out.fill_(float("inf"))
         out.scatter_reduce_(dim, index, src, reduce="amin", include_self=False)
         return out
     elif reduce == "max":
         # This is a simplified version - might not handle all edge cases
-        out.fill_(float('-inf'))
+        out.fill_(float("-inf"))
         out.scatter_reduce_(dim, index, src, reduce="amax", include_self=False)
         return out
     else:
@@ -520,3 +521,102 @@ def resursively_move_gcan_pga(net, *args, **kwargs):
 
     for child in net.children():
         resursively_move_gcan_pga(child, *args, **kwargs)
+
+
+class NBodyGMCNNWrapper(BaseWrapper):
+    """Wraps around GM-CNN for the n-body prediction experiment.
+
+    Parameters
+    ----------
+    mv_channels : int
+        Number of multivector channels
+    num_blocks : int
+        Number of GMCNN blocks
+    group : str
+        The group type ('cyclic' or 'dihedral')
+    order : int
+        The order of the group
+    nbr_size : int
+        The size of the neighborhood
+    use_gmcnn : bool
+        Flag to indicate GMCNN usage
+    input_channels : int
+        Number of input channels
+    output_channels : int
+        Number of output channels
+    """
+
+    def __init__(
+        self,
+        mv_channels: int = 16,
+        num_blocks: int = 6,
+        group: str = "cyclic",
+        order: int = 8,
+        nbr_size: int = 3,
+        use_gmcnn: bool = True,
+        input_channels: int = 7,
+        output_channels: int = 3,
+    ):
+        from gatr.models.gmcnn_model import GMCNNModel
+
+        # Create the GM-CNN model
+        net = GMCNNModel(
+            mv_channels=mv_channels,
+            num_blocks=num_blocks,
+            group=group,
+            order=order,
+            nbr_size=nbr_size,
+            input_channels=input_channels,
+            output_channels=output_channels,
+        )
+
+        super().__init__(net, scalars=False, return_other=False)
+        self.supports_variable_items = False
+
+    def embed_into_ga(self, inputs):
+        """Embeds raw inputs into the format expected by GM-CNN.
+
+        Parameters
+        ----------
+        inputs : torch.Tensor with shape (batchsize, objects, 7)
+            n-body initial state: a concatenation of masses, initial positions, and initial
+            velocities along the feature dimension.
+
+        Returns
+        -------
+        mv_inputs : torch.Tensor
+            Input tensor formatted for GM-CNN with shape (batchsize, objects, 7, 1)
+        scalar_inputs : torch.Tensor or None
+            None for GM-CNN (doesn't use scalars)
+        """
+        # GM-CNN expects inputs with shape (batch_size, num_items, input_channels, 1)
+        # Add the extra dimension for GM-CNN compatibility
+        mv_inputs = inputs.unsqueeze(-1)  # (batchsize, objects, 7, 1)
+
+        return mv_inputs, None
+
+    def extract_from_ga(self, outputs, scalars):
+        """Extracts raw outputs from the GM-CNN outputs.
+
+        Parameters
+        ----------
+        outputs : torch.Tensor
+            GM-CNN outputs with shape (batchsize, objects, 3, 1)
+        scalars : torch.Tensor or None
+            Scalar outputs (not used for GM-CNN)
+
+        Returns
+        -------
+        outputs : torch.Tensor
+            Predicted final-state positions with shape (batchsize, objects, 3)
+        other : torch.Tensor
+            Regularization terms (empty for GM-CNN)
+        """
+        # Remove the extra dimension and return final positions
+        if outputs.dim() == 4:
+            outputs = outputs.squeeze(-1)  # (batchsize, objects, 3)
+
+        # No regularization for GM-CNN
+        reg = torch.zeros(outputs.shape[0], device=outputs.device)
+
+        return outputs, reg

@@ -2,7 +2,16 @@
 # All rights reserved.
 import numpy as np
 import torch
+from pathlib import Path
+from typing import Optional, Tuple
+from dataclasses import dataclass
 
+@dataclass
+class NBodyDatasetConfig:
+    """Configuration for NBodyDataset."""
+    use_gmcnn: bool = False
+    input_channels: int = 7
+    output_channels: int = 3
 
 class NBodyDataset(torch.utils.data.Dataset):
     """N-body prediction dataset.
@@ -19,10 +28,32 @@ class NBodyDataset(torch.utils.data.Dataset):
     keep_trajectories : bool
         Whether to keep the full particle trajectories in the dataset. They are neither needed
         for training nor evaluation, but can be useful for visualization.
+    config : Optional[NBodyDatasetConfig]
+        Configuration for the dataset
     """
 
-    def __init__(self, filename, subsample=None, keep_trajectories=False):
-        super().__init__()
+    def __init__(
+        self,
+        filename: Path,
+        subsample: Optional[float] = None,
+        keep_trajectories: bool = False,
+        config: Optional[NBodyDatasetConfig] = None
+    ):
+        """
+        Initialize the dataset.
+
+        Parameters
+        ----------
+        filename : Path
+            Path to the data file
+        subsample : Optional[float]
+            Fraction of data to use
+        keep_trajectories : bool
+            Whether to keep full trajectories
+        config : Optional[NBodyDatasetConfig]
+            Configuration for the dataset
+        """
+        self.config = config or NBodyDatasetConfig()
         self.x, self.y, self.trajectories = self._load_data(
             filename, subsample, keep_trajectories=keep_trajectories
         )
@@ -33,7 +64,13 @@ class NBodyDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         """Returns the `idx`-th sample from the dataset."""
-        return self.x[idx], self.y[idx]
+        x, y = self.x[idx], self.y[idx]
+        
+        if self.config.use_gmcnn:
+            x = x.reshape(-1, self.config.input_channels, 1)  # (num_items, input_channels, 1)
+            y = y.reshape(-1, self.config.output_channels, 1)  # (num_items, output_channels, 1)
+        
+        return x, y
 
     @staticmethod
     def _load_data(filename, subsample=None, keep_trajectories=False):

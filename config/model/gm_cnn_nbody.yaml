@@ -1,0 +1,11 @@
+_target_: gatr.experiments.nbody.wrappers.NBodyGMCNNWrapper
+
+# GM-CNN specific parameters
+mv_channels: 16
+num_blocks: 6
+group: "cyclic"
+order: 8
+nbr_size: 3
+use_gmcnn: true
+input_channels: 7
+output_channels: 3
