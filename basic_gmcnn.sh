@@ -44,6 +44,16 @@ ls -la "${BASEDIR}/data/nbody/"
 
 # Set library path to include cuDNN
 export LD_LIBRARY_PATH=$CUDNN_PATH/lib:$LD_LIBRARY_PATH
+echo "Updated LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+# Test PyTorch import first
+echo "Testing PyTorch import..."
+python -c "
+import torch
+print(f'PyTorch version: {torch.__version__}')
+print(f'CUDA available: {torch.cuda.is_available()}')
+print('PyTorch import successful!')
+"
 
 # Run GM-CNN experiment
 echo "Running GM-CNN experiment..."
