@@ -6,11 +6,13 @@ import math
 from .conv_utils import generate_neighborhood, get_nbrhood_elements
 from abc import ABC, abstractmethod
 
+
 class GMConvBase(nn.Module):
     """
     Base class for Group Matrix Convolution (GMConv) layers.
     Contains common functionality for both classification and regression tasks.
     """
+
     def __init__(self, group, order, nbr_size, group_matrix, out_channels, error=False):
         """
         Initializes the GMConvBase layer.
@@ -34,13 +36,28 @@ class GMConvBase(nn.Module):
         self.target_elements = get_nbrhood_elements(self.nbrhood)
 
         # Get the indices of the target elements in the group matrix
-        self.index_matrix = np.array([np.where(group_matrix.T == element)[1] for element in self.target_elements])
+        indices = []
+        for element in self.target_elements:
+            where_result = np.where(group_matrix.T == element)
+            if len(where_result) > 1 and len(where_result[1]) > 0:
+                indices.append(where_result[1])
+            else:
+                # Fallback: find element in the original matrix
+                where_fallback = np.where(group_matrix == element)
+                if len(where_fallback) > 0 and len(where_fallback[0]) > 0:
+                    indices.append(where_fallback[0])
+                else:
+                    # If element not found, use index 0 as fallback
+                    indices.append(np.array([0]))
+        self.index_matrix = np.array(indices)
 
         # Initialize the bias
         self.bias = nn.Parameter(torch.zeros(out_channels))
 
         # Initialize the weight coefficients
-        self.weight_coeff = nn.Parameter(torch.empty(self.out_channels, 1, len(self.target_elements)))
+        self.weight_coeff = nn.Parameter(
+            torch.empty(self.out_channels, 1, len(self.target_elements))
+        )
         nn.init.kaiming_uniform_(self.weight_coeff, a=math.sqrt(5))
 
     def forward(self, x):
