@@ -9,6 +9,13 @@ echo "Base directory: $BASEDIR"
 # Create base directory if it doesn't exist
 mkdir -p "${BASEDIR}"
 
+nvidia-smi
+
+module avail cuda
+
+module load cuda/12.9.1-fasrc01
+module load cudnn/9.10.2.21_cuda12-fasrc01
+
 # Check if dataset exists, if not generate it
 if [ ! -f "${BASEDIR}/data/nbody/train.npz" ]; then
     echo "Dataset not found, generating..."
