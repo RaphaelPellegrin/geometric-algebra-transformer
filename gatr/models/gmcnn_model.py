@@ -84,8 +84,8 @@ class GMCNNModel(nn.Module):
         print(f"[GMCNNModel] Creating output projection: {mv_channels} -> {output_channels}")
         self.output_proj = nn.Linear(mv_channels, output_channels)
 
-        # Layer normalization
-        self.norm = nn.LayerNorm(mv_channels)
+        # Layer normalization (commented out due to channel size mismatch)
+        # self.norm = nn.LayerNorm(mv_channels)
 
         # Count parameters
         total_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
@@ -132,11 +132,11 @@ class GMCNNModel(nn.Module):
             x = conv_layer(x)
             print(f"[GMCNNModel] After conv layer {i+1}: {x.shape}")
 
-            # Apply normalization (use reshape instead of view for non-contiguous tensors)
-            x_squeezed = x.squeeze(-1).contiguous()
-            x_norm = self.norm(x_squeezed.view(batch_size, num_items, -1))
-            x = x_norm.view(batch_size * num_items, -1, 1).unsqueeze(-1)
-            print(f"[GMCNNModel] After normalization {i+1}: {x.shape}")
+            # Skip normalization for now due to channel size changes in GM-CNN
+            # x_squeezed = x.squeeze(-1).contiguous()
+            # x_norm = self.norm(x_squeezed.view(batch_size, num_items, -1))
+            # x = x_norm.view(batch_size * num_items, -1, 1).unsqueeze(-1)
+            print(f"[GMCNNModel] After conv layer {i+1} (no normalization): {x.shape}")
 
         # Remove the last dimension and project to output
         x = x.squeeze(-1).squeeze(-1)  # (batch_size * num_items, mv_channels)
