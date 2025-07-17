@@ -29,6 +29,9 @@ log_with_timestamp() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
+module load cuda/12.9.1-fasrc01
+module load cudnn/9.10.2.21_cuda12-fasrc01
+
 # Function to run command with logging (captures both stdout and stderr)
 run_with_logging() {
     local cmd="$1"

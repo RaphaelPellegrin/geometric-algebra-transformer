@@ -13,8 +13,15 @@ nvidia-smi
 
 module avail cuda
 
+echo "Loading CUDA and cuDNN modules..."
 module load cuda/12.9.1-fasrc01
 module load cudnn/9.10.2.21_cuda12-fasrc01
+
+echo "Checking loaded modules..."
+module list
+
+echo "Checking if cuDNN library is available..."
+ldconfig -p | grep cudnn
 
 # Check if dataset exists, if not generate it
 if [ ! -f "${BASEDIR}/data/nbody/train.npz" ]; then
