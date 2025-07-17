@@ -48,7 +48,7 @@ class MinimalGMCNNWrapper(BaseWrapper):
         inputs_4d = inputs.unsqueeze(-1)  # (batch, objects, features, 1)
 
         # Forward through GM-CNN
-        outputs = self.net(inputs_4d)
+        outputs, _ = self.net(inputs_4d)  # Unpack the tuple
 
         # Remove extra dimension
         outputs_3d = outputs.squeeze(-1)  # (batch, objects, 3)
