@@ -16,12 +16,18 @@ except ImportError:
     Irreps = None
     spherical_harmonics = None
 
-try:
-    from torch_geometric.data import Data
-    from torch_geometric.nn import knn_graph
-except ImportError:
-    Data = None
-    knn_graph = None
+# torch_geometric causes segfaults on this system, so we'll skip it
+# try:
+#     from torch_geometric.data import Data
+#     from torch_geometric.nn import knn_graph
+# except (ImportError, OSError, RuntimeError) as e:
+#     print(f"Warning: torch_geometric import failed: {e}")
+#     Data = None
+#     knn_graph = None
+
+# Manually set to None to avoid torch_geometric issues
+Data = None
+knn_graph = None
 
 
 # Custom implementation to replace torch_scatter
