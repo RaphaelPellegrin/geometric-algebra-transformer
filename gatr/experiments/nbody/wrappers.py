@@ -557,9 +557,15 @@ class NBodyGMCNNWrapper(BaseWrapper):
         input_channels: int = 7,
         output_channels: int = 3,
     ):
+        print(f"[NBodyGMCNNWrapper] Initializing GM-CNN wrapper")
+        print(f"[NBodyGMCNNWrapper] Parameters: mv_channels={mv_channels}, num_blocks={num_blocks}")
+        print(f"[NBodyGMCNNWrapper] Group: {group}, order={order}, nbr_size={nbr_size}")
+        print(f"[NBodyGMCNNWrapper] Channels: input={input_channels}, output={output_channels}")
+
         from gatr.models.gmcnn_model import GMCNNModel
 
         # Create the GM-CNN model
+        print(f"[NBodyGMCNNWrapper] Creating GM-CNN model...")
         net = GMCNNModel(
             mv_channels=mv_channels,
             num_blocks=num_blocks,
@@ -569,9 +575,11 @@ class NBodyGMCNNWrapper(BaseWrapper):
             input_channels=input_channels,
             output_channels=output_channels,
         )
+        print(f"[NBodyGMCNNWrapper] GM-CNN model created successfully")
 
         super().__init__(net, scalars=False, return_other=False)
         self.supports_variable_items = False
+        print(f"[NBodyGMCNNWrapper] Wrapper initialization complete")
 
     def embed_into_ga(self, inputs):
         """Embeds raw inputs into the format expected by GM-CNN.
@@ -589,9 +597,13 @@ class NBodyGMCNNWrapper(BaseWrapper):
         scalar_inputs : torch.Tensor or None
             None for GM-CNN (doesn't use scalars)
         """
+        print(f"[NBodyGMCNNWrapper] Embedding inputs - Original shape: {inputs.shape}")
+
         # GM-CNN expects inputs with shape (batch_size, num_items, input_channels, 1)
         # Add the extra dimension for GM-CNN compatibility
         mv_inputs = inputs.unsqueeze(-1)  # (batchsize, objects, 7, 1)
+
+        print(f"[NBodyGMCNNWrapper] Embedding inputs - Embedded shape: {mv_inputs.shape}")
 
         return mv_inputs, None
 
@@ -612,9 +624,13 @@ class NBodyGMCNNWrapper(BaseWrapper):
         other : torch.Tensor
             Regularization terms (empty for GM-CNN)
         """
+        print(f"[NBodyGMCNNWrapper] Extracting outputs - Raw output shape: {outputs.shape}")
+
         # Remove the extra dimension and return final positions
         if outputs.dim() == 4:
             outputs = outputs.squeeze(-1)  # (batchsize, objects, 3)
+
+        print(f"[NBodyGMCNNWrapper] Extracting outputs - Final shape: {outputs.shape}")
 
         # No regularization for GM-CNN
         reg = torch.zeros(outputs.shape[0], device=outputs.device)

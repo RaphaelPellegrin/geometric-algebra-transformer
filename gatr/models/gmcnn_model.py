@@ -44,17 +44,27 @@ class GMCNNModel(nn.Module):
     ) -> None:
         super().__init__()
 
+        print(f"[GMCNNModel] Initializing GM-CNN model")
+        print(f"[GMCNNModel] Architecture: {input_channels} -> {mv_channels} -> {output_channels}")
+        print(
+            f"[GMCNNModel] Group: {group}, order: {order}, nbr_size: {nbr_size}, num_blocks: {num_blocks}"
+        )
+
         self.input_channels = input_channels
         self.output_channels = output_channels
         self.supports_variable_items = False
 
         # Create group matrix
+        print(f"[GMCNNModel] Creating group matrix for {group} group with order {order}")
         group_matrix = create_group_matrix(group, order)
+        print(f"[GMCNNModel] Group matrix shape: {group_matrix.shape}")
 
         # Input projection to intermediate channels
+        print(f"[GMCNNModel] Creating input projection: {input_channels} -> {mv_channels}")
         self.input_proj = nn.Linear(input_channels, mv_channels)
 
         # GM-CNN convolution layers
+        print(f"[GMCNNModel] Creating {num_blocks} GM-CNN convolution layers")
         self.conv_layers = nn.ModuleList(
             [
                 GMConvReg(
@@ -65,15 +75,21 @@ class GMCNNModel(nn.Module):
                     out_channels=mv_channels,
                     error=True,
                 )
-                for _ in range(num_blocks)
+                for i in range(num_blocks)
             ]
         )
+        print(f"[GMCNNModel] Created {len(self.conv_layers)} convolution layers")
 
         # Output projection
+        print(f"[GMCNNModel] Creating output projection: {mv_channels} -> {output_channels}")
         self.output_proj = nn.Linear(mv_channels, output_channels)
 
         # Layer normalization
         self.norm = nn.LayerNorm(mv_channels)
+
+        # Count parameters
+        total_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        print(f"[GMCNNModel] Model initialized with {total_params:,} trainable parameters")
 
     def forward(
         self,
@@ -96,30 +112,41 @@ class GMCNNModel(nn.Module):
         scalars : Optional[torch.Tensor]
             Scalar outputs (None for GM-CNN)
         """
+        print(f"[GMCNNModel] Forward pass - Input shape: {x.shape}")
         batch_size, num_items, in_channels, _ = x.shape
 
         # Remove the last dimension and project to intermediate channels
         x = x.squeeze(-1)  # (batch_size, num_items, input_channels)
+        print(f"[GMCNNModel] After squeeze: {x.shape}")
+
         x = self.input_proj(x)  # (batch_size, num_items, mv_channels)
+        print(f"[GMCNNModel] After input projection: {x.shape}")
 
         # Prepare for GM-CNN: reshape to (batch_size * num_items, mv_channels, 1, 1)
         x = x.view(batch_size * num_items, -1, 1).unsqueeze(-1)
+        print(f"[GMCNNModel] Reshaped for GM-CNN layers: {x.shape}")
 
         # Apply GM-CNN layers
-        for conv_layer in self.conv_layers:
+        for i, conv_layer in enumerate(self.conv_layers):
+            print(f"[GMCNNModel] Applying GM-CNN layer {i+1}/{len(self.conv_layers)}")
             x = conv_layer(x)
-            x = (
-                self.norm(x.squeeze(-1).view(batch_size, num_items, -1))
-                .view(batch_size * num_items, -1, 1)
-                .unsqueeze(-1)
-            )
+            print(f"[GMCNNModel] After conv layer {i+1}: {x.shape}")
+
+            # Apply normalization
+            x_norm = self.norm(x.squeeze(-1).view(batch_size, num_items, -1))
+            x = x_norm.view(batch_size * num_items, -1, 1).unsqueeze(-1)
+            print(f"[GMCNNModel] After normalization {i+1}: {x.shape}")
 
         # Remove the last dimension and project to output
         x = x.squeeze(-1).squeeze(-1)  # (batch_size * num_items, mv_channels)
+        print(f"[GMCNNModel] Before output projection: {x.shape}")
+
         x = x.view(batch_size, num_items, -1)  # (batch_size, num_items, mv_channels)
         x = self.output_proj(x)  # (batch_size, num_items, output_channels)
+        print(f"[GMCNNModel] After output projection: {x.shape}")
 
         # Add back the last dimension for compatibility
         x = x.unsqueeze(-1)  # (batch_size, num_items, output_channels, 1)
+        print(f"[GMCNNModel] Final output shape: {x.shape}")
 
         return x, None

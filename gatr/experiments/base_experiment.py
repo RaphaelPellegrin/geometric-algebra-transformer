@@ -140,9 +140,13 @@ class BaseExperiment:
     def create_model(self):
         """Create self.model according to the specification in self.cfg."""
 
+        print(f"[BaseExperiment] Creating model using config: {self.cfg.model._target_}")
+
         # Create model
         self.model = self._create_model()
         assert self.model is not None
+        print(f"[BaseExperiment] Model created successfully: {type(self.model).__name__}")
+
         self.optim, self.scheduler = self._create_optimizer_and_scheduler()
 
         # Report number of parameters
@@ -152,15 +156,18 @@ class BaseExperiment:
         if wandb.run is not None:
             wandb.log({"efficiency.num_parameters": float(num_parameters)}, step=0)
         logger.info(f"Model has {num_parameters / 1e6:.2f}M learnable parameters")
+        print(f"[BaseExperiment] Model has {num_parameters / 1e6:.2f}M learnable parameters")
 
         # Create exponential moving average object
         if self.cfg.training.ema:
             logger.info("Using EMA for validation and eval")
+            print(f"[BaseExperiment] Using EMA with decay {self.cfg.training.ema_decay}")
             self.ema = ExponentialMovingAverage(
                 self.model.parameters(), decay=self.cfg.training.ema_decay
             )
         else:
             logger.debug("Not using EMA")
+            print(f"[BaseExperiment] Not using EMA")
             self.ema = None
 
     def load_model(self, checkpoint=None):
