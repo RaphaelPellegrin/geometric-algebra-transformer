@@ -1,12 +1,27 @@
 # Copyright (c) 2023 Qualcomm Technologies, Inc.
 # All rights reserved.
-import dgl
 import numpy as np
 import torch
-from e3nn.o3 import Irreps, spherical_harmonics
 from torch import nn
-from torch_geometric.data import Data
-from torch_geometric.nn import knn_graph
+
+# Optional dependencies - only import if available
+try:
+    import dgl
+except ImportError:
+    dgl = None
+
+try:
+    from e3nn.o3 import Irreps, spherical_harmonics
+except ImportError:
+    Irreps = None
+    spherical_harmonics = None
+
+try:
+    from torch_geometric.data import Data
+    from torch_geometric.nn import knn_graph
+except ImportError:
+    Data = None
+    knn_graph = None
 
 
 # Custom implementation to replace torch_scatter
