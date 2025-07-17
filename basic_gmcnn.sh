@@ -15,7 +15,7 @@ module avail cuda
 
 echo "Loading CUDA and cuDNN modules..."
 module load cuda/12.9.1-fasrc01
-module load cudnn/9.10.2.21_cuda12-fasrc01
+module load cudnn/8.9.2.26_cuda12-fasrc01
 
 echo "Checking loaded modules..."
 module list
