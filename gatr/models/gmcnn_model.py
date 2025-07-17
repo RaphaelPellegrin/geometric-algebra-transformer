@@ -142,7 +142,9 @@ class GMCNNModel(nn.Module):
         print(f"[GMCNNModel] Raw output shape: {x.shape}")
 
         # Flatten the last two dimensions and take only the mv_channels
-        x = x.view(batch_size * num_items, -1)  # Flatten to (batch_size * num_items, all_features)
+        x = x.contiguous().view(
+            batch_size * num_items, -1
+        )  # Flatten to (batch_size * num_items, all_features)
         print(f"[GMCNNModel] Flattened shape: {x.shape}")
 
         # Take only the first mv_channels for output projection
