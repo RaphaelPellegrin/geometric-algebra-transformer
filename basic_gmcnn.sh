@@ -23,16 +23,16 @@ echo ""
 
 # Load required modules
 echo "Loading CUDA and cuDNN modules..."
-# module load cuda/12.9.1-fasrc01
-# module load cudnn/8.9.2.26_cuda12-fasrc01
+module load cuda/12.9.1-fasrc01
+module load cudnn/8.9.2.26_cuda12-fasrc01
 
 echo "Checking loaded modules..."
 module list
 echo ""
 
 # # Set library path to include cuDNN
-# export LD_LIBRARY_PATH=$CUDNN_PATH/lib:$LD_LIBRARY_PATH
-# echo "Updated LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH=$CUDNN_PATH/lib:$LD_LIBRARY_PATH
+echo "Updated LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
 # Make sure we're using the right conda environment
 echo "Checking conda environment..."
